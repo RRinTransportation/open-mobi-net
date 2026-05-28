@@ -24,6 +24,9 @@ This specific configuration (available in `config/Lyon_multimodal.py`) will gene
 
 - If Links.shp and Nodes.shp from GTFS are not already saved, pre-processing can be particularly time-consuming (~1h for Lyon on a standard laptop). After this step, they are saved in `net_pt/lines/lines.shp` and `net_pt/stops/stops.shp` to avoid having to redo the extraction each time.
 
+- Some road traffic link can have non-null capacity and speed values in one direction, but the number of lanes is null or None. 
+  - What is supposed to be forbiden is to have non null values for lanes number and null values for either speed or capacity.
+
 ## To do later on:
 - Correct errors during map-matching of bus lines on the OSM network
 - Correct errors on missing features in the road traffic network 

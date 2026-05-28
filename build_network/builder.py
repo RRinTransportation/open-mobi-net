@@ -7,7 +7,6 @@ import os
 import subprocess
 import sys
 import time
-from build_network.polygon_selection.selection_from_streamlit_ui import get_polygon_from_streamlit_ui
 
 
 from uuid import uuid4
@@ -104,6 +103,12 @@ class NetworkBuilder:
         process = subprocess.Popen([
             sys.executable, "-m", "streamlit", "run", script_path, "--server.headless", "false"
         ], env=env)
+        
+        # if the process terminate cause the user close the streamlit window, we want to stop waiting for the file and terminate the process
+        if process.poll() is not None:
+            process.terminate()
+            raise Exception("Streamlit process terminated. Please run the network builder again and draw a polygon to select the area.")
+        
         while not os.path.exists(self.export_file):
             time.sleep(1)
         process.terminate()

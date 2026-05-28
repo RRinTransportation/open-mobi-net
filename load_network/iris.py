@@ -138,57 +138,15 @@ def get_index_from_iris_ids(L_iris_id,iris_gdf):
     gdf_i = iris_gdf.copy()
     return list(gdf_i[gdf_i.CODE_IRIS.isin(L_iris_id)].index)
 
-def aggregate_iris_zones(init_gdf: gpd.GeoDataFrame, 
-                        target_n: int, 
-                        save_path:str = None,
-                        unique_id: str = 'DCOMIRIS',
-                        original_crs: str = 'EPSG:2154',
-                        cordon: shapely.geometry.polygon.Polygon = None,
-                        within: bool = True,
-                        # columns_to_join: list = ['CONTAINS','NEIGHBORS']
-                        ) -> gpd.GeoDataFrame:
-    """
-    Agrège les zones IRIS d'un GeoDataFrame jusqu'à atteindre au plus target_n zones.
-    L'agrégation minimise le critère (s_i + s_j) / P_ij entre zones adjacentes.
-    Où P_ij est la longueur de la portion de perimètre commune entre deux zones.
 
-    Paramètres:
-        gdf: GeoDataFrame avec colonnes 'INSEE_COM', 'IRIS', 'CODE_IRIS', 'NEIGHBORS', 'STATION', 'geometry', etc.
-        target_n: nombre cible de zones après agrégation.
-
-    Retour:
-        GeoDataFrame agrégé.
-    """
-    gdf = preprocess_iris_shp(init_gdf,unique_id,original_crs)
-    if cordon is not None: 
-        gdf = clip_gdf_with_polygon(gdf.to_crs('EPSG:4326'),cordon,within).to_crs('EPSG:2154')
-
-    gdf[['best_score','best_neighbor']] = pd.DataFrame(gdf.apply(lambda row: compute_score(row,gdf),axis=1).tolist(),columns=['best_score','best_neighbor'],index=gdf.index)
-
-
-    # Boucle principale
-    while len(gdf) > target_n:
-        gdf,_ = iteration_spatial_agg(gdf)
-
-    # for column in columns_to_join:
-    #     gdf[column] = gdf[column].apply(lambda x: ','.join(map(str, x)))
-
-    # Save gdf: 
-    if save_path is not None: 
-        dir_path = f"{save_path}/lyon_iris_agg{target_n}"
-        if not os.path.exists(dir_path):
-            os.mkdir(dir_path)
-        gdf.to_file(f"{dir_path}/lyon.shp")
-    return gdf
-
-
-def preprocess_iris_shp(init_gdf,unique_id = 'DCOMIRIS',original_crs = 'EPSG:2154'):
+def preprocess_iris_shp(init_gdf,unique_id = 'DCOMIRIS'):
     
     gdf = init_gdf.copy()
-    gdf.crs = original_crs 
-    if gdf.crs != 'EPSG:2154':
-        gdf = gdf.to_crs('EPSG:2154')
-    # gdf[unique_id] = gdf[unique_id].tolist()
+    if not hasattr(gdf, 'crs'):
+        raise ValueError("gdf should have a CRS. Please set a CRS different different from Geodetic System (i.e. not EPSG:4326)")
+    if gdf.crs == 'EPSG:4326':
+        raise ValueError("gdf should have a CRS different from Geodetic System (i.e. not EPSG:4326)")
+
     gdf[unique_id] = gdf[unique_id].apply(lambda x: np.int64(x))
 
     gdf['area'] = gdf.geometry.area/ 1e6  # Convertir en km²
@@ -205,6 +163,8 @@ def clip_gdf_with_polygon(gdf,cordon,within):
     Update the neighbors accordingly.
     """
     # Keep only the geometries that are contained within the polygon
+    if type(cordon) == gpd.GeoDataFrame and len(cordon) == 1:
+        cordon = cordon.geometry.iloc[0]
     if within : 
         mask = gdf.geometry.within(cordon)
     # Or intersecting:
@@ -217,3 +177,52 @@ def clip_gdf_with_polygon(gdf,cordon,within):
     gdf['NEIGHBORS'] = gdf.apply(lambda row: list(set(gdf[gdf.geometry.touches(row.geometry)].index) & set(gdf.index)), axis=1)
     return gdf
 
+
+def aggregate_iris_zones(init_gdf: gpd.GeoDataFrame, 
+                        target_n: int, 
+                        save_path:str = None,
+                        unique_id: str = 'DCOMIRIS',
+                        cordon: shapely.geometry.polygon.Polygon = None,
+                        within: bool = True,
+                        # columns_to_join: list = ['CONTAINS','NEIGHBORS']
+                        ) -> gpd.GeoDataFrame:
+    """
+    Agrège les zones IRIS d'un GeoDataFrame jusqu'à atteindre au plus target_n zones.
+    L'agrégation minimise le critère (s_i + s_j) / P_ij entre zones adjacentes.
+    Où P_ij est la longueur de la portion de perimètre commune entre deux zones.
+
+    Paramètres:
+        gdf: GeoDataFrame avec colonnes 'INSEE_COM', 'IRIS', 'CODE_IRIS', 'NEIGHBORS', 'STATION', 'geometry', etc.
+        target_n: nombre cible de zones après agrégation.
+
+    Retour:
+        GeoDataFrame agrégé.
+    """
+    gdf = preprocess_iris_shp(init_gdf,unique_id)
+
+    # Restrict to cordon if provided:
+    if cordon is not None: 
+        gdf = clip_gdf_with_polygon(gdf,cordon,within)
+    # ....
+        
+    # Init best_score and best_neighbor for each zone:
+    gdf[['best_score','best_neighbor']] = pd.DataFrame(gdf.apply(
+            lambda row: compute_score(row,gdf),axis=1).tolist(),
+            columns=['best_score','best_neighbor'],index=gdf.index
+            )
+    # ...
+
+
+    # While objectif not reached, aggregate the 2 best zones:
+    while len(gdf) > target_n:
+        gdf,_ = iteration_spatial_agg(gdf)
+    # ...
+
+    # Save gdf: 
+    if save_path is not None: 
+        dir_path = f"{save_path}/lyon_iris_agg{target_n}"
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+        gdf.to_file(f"{dir_path}/lyon.shp")
+    # ...
+    return gdf

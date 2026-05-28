@@ -20,11 +20,13 @@ This specific configuration (available in `config/Lyon_multimodal.py`) will gene
 
 ## Good to know:
 
+- When testing the package, try by drawing a very small area (e.g. ~100m2) to avoid long processing times.
+
 - If Links.shp and Nodes.shp from GTFS are not already saved, pre-processing can be particularly time-consuming (~1h for Lyon on a standard laptop). After this step, they are saved in `net_pt/lines/lines.shp` and `net_pt/stops/stops.shp` to avoid having to redo the extraction each time.
 
 ## To do later on:
 - Correct errors during map-matching of bus lines on the OSM network
-- Add zoning (already partially done with IRIS or tessellation defined from aggregated IRIS zones)
+- Correct errors on missing features in the road traffic network 
 - Currently, builds all defined possible modes.
   - To do: Add exceptions to handle the import of a subset of modes among [Car, Public transport, bike, walk]
 - `utils/network.py` has been arbitrarily filled with assumptions that should be revised

@@ -1,5 +1,4 @@
-from plotting.plotting_folium import plot_layers_on_folium_map
-from plotting.plotting_folium import draw_lane
+from plotting.plotting_folium import plot_layers_on_folium_map,plot_zones,draw_lane
 import folium 
 
 
@@ -11,11 +10,16 @@ class PlottingMultimodal():
     Finally, we plot the layers on a Folium map, and add the GTFS network as an additional layer.
     We also add a layer control to toggle the visibility of each layer.
     """
-    def __init__(self, aequilibraebuilder, gtfs_network_builder, Layers: list[str] = ["Car", "Bike", "Cycling Lanes", "Walk Only"]):
+    def __init__(self, aequilibraebuilder, gtfs_network_builder, 
+                 gdf_init_zones = None,
+                 gdf_agg_zones = None,
+                 Layers: list[str] = ["Car", "Bike", "Cycling Lanes", "Walk Only"]):
         self.network_gdf = aequilibraebuilder.traffic_network
         self.nodes_gdf = aequilibraebuilder.nodes
         self.final_pt_links = gtfs_network_builder.final_pt_links
         self.Layers = Layers
+        self.gdf_init_zones = gdf_init_zones
+        self.gdf_agg_zones = gdf_agg_zones
         self._extract_subnetworks()
 
     def plotting(self,save=None):
@@ -33,6 +37,9 @@ class PlottingMultimodal():
                 layer_name="PT",
                 link_color="#2278f0",
                 tooltip_fields=['line_name','sub_route_id','route_id'])
+        
+
+        m = plot_zones(m, self.gdf_init_zones, self.gdf_agg_zones)
 
         folium.LayerControl(collapsed=False).add_to(m)
 

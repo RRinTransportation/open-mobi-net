@@ -6,6 +6,28 @@ import math
 import numpy as np 
 
 
+def plot_zones(main_map, gdf_init_zones, gdf_agg_zones):
+    if gdf_init_zones is not None:
+        gdf_init_zones = gdf_init_zones[['NOM_IRIS', 'DCOMIRIS_s','NOM_COM', 'DEPCOM', 'TYP_IRIS','geometry']].copy()
+        folium.GeoJson(
+            gdf_init_zones,
+            name="Initial Zones",
+            style_function=lambda x: {'fillColor': 'lightgray', 'color': 'gray', 'weight': 1, 'fillOpacity': 0.15},
+            # tooltip=GeoJsonTooltip(fields=['code_iris', 'TYP_IRIS'], aliases=['IRIS Code:', 'IRIS Type:'])
+        ).add_to(main_map)
+
+    if gdf_agg_zones is not None:
+        gdf_agg_zones = gdf_agg_zones[['area', 'Zone_id', 'geometry']].copy()
+        folium.GeoJson(
+            gdf_agg_zones,
+            name="Aggregated Zones",
+            style_function=lambda x: {'fillColor': 'thistle', 'color': 'lightpink', 'weight': 2, 'fillOpacity': 0.15},
+            # tooltip=GeoJsonTooltip(fields=['zone_id'], aliases=['Zone ID:'])
+        ).add_to(main_map)
+
+    return main_map
+
+
 def draw_lane(main_map,links_gdf,layer_name,link_color,tooltip_fields):
     
     layer_group_lane = folium.FeatureGroup(name=f"{layer_name} Lanes", show=False)

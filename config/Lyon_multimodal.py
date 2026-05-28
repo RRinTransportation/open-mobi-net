@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser(description='Build a multimodal network for a s
 # Init 
 parser.add_argument('--city', type=str, default=f"{CITY}", help='Name of the city to build the network for')
 parser.add_argument('--folder_path', type=str, default=f"data/{CITY}/raw_data", help='Path to the folder containing raw data')
+parser.add_argument('--plane_projection', type=str, default='EPSG:2154', help='EPSG code of the plane projection to use for spatial operations (e.g. aggregation)')
 
 # Path to the traffic network shapefiles:
 parser.add_argument('--IRIS_folder_path', type=str, default=f"data/{CITY}/raw_data/net_car/shapefiles_sym", help='Path to the folder containing IRIS zones shapefiles')
@@ -29,6 +30,11 @@ parser.add_argument('--gtfs_folder_name', type=str, default='net_pt', help='Name
 parser.add_argument('--gtfs_zip_name', type=str, default='lyon_tcl_gtfs.zip', help='Name of the GTFS zip file')
 parser.add_argument('--agency_name', type=str, default='TCL', help='Name of the transit agency in the GTFS data')
 parser.add_argument('--transit_date', type=str, default='2024-08-14', help='Date for which to load the transit data from the GTFS file (format: YYYY-MM-DD)') 
+
+
+# Zones parameters : 
+parser.add_argument('--target_n_zones', type=int, default=5, help='Number of zones to aggregate the initial zones to')
+
 
 args = parser.parse_args(args=[])
 # args = parser.parse_args()

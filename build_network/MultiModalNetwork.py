@@ -1,11 +1,13 @@
 import pandas as pd
+import geopandas as gpd
 import os
-
+import numpy as np 
 from build_network.builder import NetworkBuilder
 from build_network.AequilibraeBuilder import AequilibraeBuilder
 from build_network.build_pt_network.GTFSImporter import GTFSImporter
 from build_network.build_pt_network.GTFSNetworkBuilder import GTFSNetworkBuilder
 from build_network.build_pt_network.MatMatchingPT2OSM import MapMatchingPT2OSM
+from load_network.iris import aggregate_iris_zones
 
 
 class MultiModalNetwork:
@@ -25,6 +27,9 @@ class MultiModalNetwork:
                 gtfs_zip_name :str,
                 agency_name: str,
                 transit_date: str,
+                plane_projection :str,
+                target_n_zones: int,
+                save_path: str = None
                  ): 
         self.folder_path = folder_path
         self.IRIS_folder_path = IRIS_folder_path
@@ -40,12 +45,16 @@ class MultiModalNetwork:
         self.gtfs_zip_name = gtfs_zip_name
         self.agency_name = agency_name
         self.transit_date = transit_date
+        self.plane_projection = plane_projection
+        self.target_n_zones = target_n_zones
+        self.save_path = save_path
 
 
     def build(self):
         networkbuilder = self._build_working_area()
         aequilibraebuilder, networkbuilder = self._build_traffic_network(networkbuilder)
         gtfs_network_builder = self._build_pt_network(networkbuilder, aequilibraebuilder)
+        self._build_zones(networkbuilder)
 
         return networkbuilder, aequilibraebuilder, gtfs_network_builder
 
@@ -121,6 +130,29 @@ class MultiModalNetwork:
         gtfs_network_builder.final_matches = final_matches
         gtfs_network_builder.final_pt_links = final_pt_links
         return gtfs_network_builder
+    
+    def _build_zones(self,networkbuilder):
+        cordon_projected = gpd.GeoDataFrame({'geometry': [networkbuilder.study_area_polygon]}, 
+                                            geometry='geometry', 
+                                            crs= networkbuilder.target_crs
+                                            ).to_crs(self.plane_projection)
+        
+        gdf_init_zones = networkbuilder.gdf.to_crs(self.plane_projection)
+
+
+        gdf_agg_zones = aggregate_iris_zones(init_gdf = gdf_init_zones,
+                                target_n = self.target_n_zones, 
+                                unique_id = 'DCOMIRIS',
+                                cordon = cordon_projected,
+                                within = True,
+                                save_path = f"{self.save_path}/agg_zones" if self.save_path is not None else None,
+                                # columns_to_join: list = ['CONTAINS','NEIGHBORS']
+                                )
+        gdf_agg_zones['Zone_id'] = np.arange(len(gdf_agg_zones))
+        
+        self.gdf_init_zones = gdf_init_zones.to_crs(self.target_crs)
+        self.gdf_agg_zones = gdf_agg_zones.to_crs(self.target_crs)
+
 
 
 

@@ -6,7 +6,7 @@ from uuid import uuid4
 from aequilibrae.transit import Transit
 import pandas as pd 
 import geopandas as gpd
-from build_pt_network.SQL_query import sql_enriched_nodes_query, sql_links_query
+from .SQL_query import sql_enriched_nodes_query, sql_links_query
 
 class GTFSImporter:
     def __init__(self, 

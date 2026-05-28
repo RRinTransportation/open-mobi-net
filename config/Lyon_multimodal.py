@@ -9,7 +9,7 @@ parser.add_argument('--city', type=str, default=f"{CITY}", help='Name of the cit
 parser.add_argument('--folder_path', type=str, default=f"data/{CITY}/raw_data", help='Path to the folder containing raw data')
 
 # Path to the traffic network shapefiles:
-parser.add_argument('--traffic_folder_path', type=str, default=f"data/{CITY}/raw_data/net_car/shapefiles_sym", help='Path to the folder containing traffic network shapefiles')
+parser.add_argument('--IRIS_folder_path', type=str, default=f"data/{CITY}/raw_data/net_car/shapefiles_sym", help='Path to the folder containing IRIS zones shapefiles')
 parser.add_argument('--file_name', type=str, default='Iris_Lyon.shp', help='Name of the shapefile containing the area of study')
 parser.add_argument('--export_file', type=str, default="data.geojson", help='Path to the output file where the processed network will be saved')
 

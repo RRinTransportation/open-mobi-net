@@ -12,7 +12,7 @@ class MultiModalNetwork:
 
     def __init__(self, 
                  folder_path,
-                 traffic_folder_path,
+                 IRIS_folder_path,
                  file_name,
                  init_crs,
                  target_crs,
@@ -27,7 +27,7 @@ class MultiModalNetwork:
                 transit_date: str,
                  ): 
         self.folder_path = folder_path
-        self.traffic_folder_path = traffic_folder_path
+        self.IRIS_folder_path = IRIS_folder_path
         self.file_name = file_name
         self.init_crs = init_crs
         self.target_crs = target_crs
@@ -53,7 +53,7 @@ class MultiModalNetwork:
 
     def _build_working_area(self,):
         networkbuilder = NetworkBuilder(
-            traffic_folder_path = self.traffic_folder_path,
+            IRIS_folder_path = self.IRIS_folder_path,
             file_name = self.file_name,
             init_crs = self.init_crs,
             target_crs = self.target_crs,
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     CITY="Lyon"
 
     folder_path = f"data/{CITY}/raw_data"
-    traffic_folder_path = f'{folder_path}/net_car/shapefiles_sym'
+    IRIS_folder_path = f'{folder_path}/net_car/shapefiles_sym'
     file_name = 'Iris_Lyon.shp'
     init_crs = "EPSG:2154"
     target_crs = "EPSG:4326"
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     multi_modal_network = MultiModalNetwork(
         folder_path = folder_path, 
-        traffic_folder_path = traffic_folder_path,
+        IRIS_folder_path = IRIS_folder_path,
         file_name = file_name,
         init_crs = init_crs,
         target_crs = target_crs,

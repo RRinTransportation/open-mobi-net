@@ -47,7 +47,7 @@ def spatial_mask(gdf, study_area_polygon):
 
 class NetworkBuilder:
     def __init__(self, 
-                 traffic_folder_path = 'data/Lyon/raw_data/net_car/shapefiles_sym',
+                 IRIS_folder_path = 'data/Lyon/raw_data/net_car/shapefiles_sym',
                  file_name = 'Iris_Lyon.shp',
                  init_crs = "EPSG:2154",
                  target_crs = "EPSG:4326",
@@ -57,7 +57,7 @@ class NetworkBuilder:
                  key_column = None,
                  restricted_keys = None):
         
-        self.traffic_folder_path = traffic_folder_path
+        self.IRIS_folder_path = IRIS_folder_path
         self.file_name = file_name
         self.init_crs = init_crs
         self.target_crs = target_crs
@@ -69,7 +69,7 @@ class NetworkBuilder:
 
     def run(self):
         """ Main method to run the network building process. Restrict the area based on the 3 methods and return the resulting GeoDataFrame"""
-        self.gdf = load_init_area(self.traffic_folder_path, self.file_name, self.init_crs)
+        self.gdf = load_init_area(self.IRIS_folder_path, self.file_name, self.init_crs)
         if self.selection_from_polygon:
             self._select_from_polygon(self.gdf) 
 
@@ -135,7 +135,7 @@ class NetworkBuilder:
 
 if __name__ == "__main__":
     # Init ...
-    traffic_folder_path = 'data/Lyon/raw_data/net_car/shapefiles_sym'
+    IRIS_folder_path = 'data/Lyon/raw_data/net_car/shapefiles_sym'
     file_name = 'Iris_Lyon.shp'
     init_crs = "EPSG:2154"
     target_crs = "EPSG:4326"
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     # ...
 
     gdf = NetworkBuilder(
-        traffic_folder_path = traffic_folder_path,
+        IRIS_folder_path = IRIS_folder_path,
         file_name = file_name,
         init_crs = init_crs,
         target_crs = target_crs,

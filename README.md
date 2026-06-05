@@ -22,27 +22,30 @@ Input are stored data in a `data/` folder containing :
     - Iris Zones: `net_car/shapefiles_sym/` containing the IRIS zones shapefile
     - Public Transport: `net_pt/GTFS/` containing the GTFS folder.zip (e.g., `net_pt/gtfs/lyon_tcl_gtfs.zip`), composed of .txt files (e.g., `stops.txt`, `stop_times.txt`, `trips.txt`, `routes.txt` ...)
 #### Example of expected tree: 
+```text
 data/
-| Lyon/
-|   | raw_data/
-|   |   | net_bike/
-|   |   |   | shapes/
-|   |   |   |   | links_processed.cpg
-|   |   |   |   | links_processed.dbf
-|   |   |   |   | links_processed.shp
-|   |   |   |   | links_processed.shx
-|   |   |   |   | nodes_processed.cpg
-|   |   |   |   | nodes_processed.dbf
-|   |   |   |   | nodes_processed.shp
-|   |   |   |   | nodes_processed.shx
-|   |   | net_car/
-|   |   |   | shapefiles_sym/
-|   |   |   |   | Iris_Lyon.dbf
-|   |   |   |   | Iris_Lyon.shp
-|   |   |   |   | Iris_Lyon.shx
-|   |   | net_pt/
-|   |   |   | GTFS/
-|   |   |   |   | lyon_tcl_gtfs.zip
+└── Lyon/
+    ├── raw_data/
+    │   ├── net_bike/
+    │   │   └── shapes/
+    │   │       ├── links_processed.cpg
+    │   │       ├── links_processed.dbf
+    │   │       ├── links_processed.shp
+    │   │       ├── links_processed.shx
+    │   │       ├── nodes_processed.cpg
+    │   │       ├── nodes_processed.dbf
+    │   │       ├── nodes_processed.shp
+    │   │       └── nodes_processed.shx
+    │   ├── net_car/
+    │   │   └── shapefiles_sym/
+    │   │       ├── Iris_Lyon.dbf
+    │   │       ├── Iris_Lyon.shp
+    │   │       └── Iris_Lyon.shx
+    │   └── net_pt/
+    │       └── GTFS/
+    │           └── lyon_tcl_gtfs.zip
+```
+
 
 ### Notebook: 
 

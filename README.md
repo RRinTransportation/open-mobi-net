@@ -4,13 +4,45 @@ The repository aims to provide an automated pipeline where a multimodal transpor
 In a second phase, it will involve generating OD matrices and calibrating demand models from loop sensors.
 
 ## Usage example:
+### Environment : 
+python: 3.12.13
+aequilibrae: 1.6.2
+folium: 0.20.0
+networkx: 3.6.1
+geopandas: 1.1.3
+streamlit: 1.57.0        
+streamlit-folium: 0.27.2
 
 ### Input for operation:
 
-- store data in a `data/` folder containing a subfolder associated with the studied city (e.g., `data/lyon/`), where the raw data file is located (e.g., `data/lyon/raw_data/`), containing the necessary data for the construction of the transport network:
+Input are stored data in a `data/` folder containing :
+- a subfolder associated with the studied city (e.g., `data/lyon/`), where:
+  - the raw data file is located (e.g., `data/lyon/raw_data/`), containing the necessary data for the construction of the transport network:
     - Bike network: `net_bike/shapes/` containing the files `links_processed.shp` and `nodes_processed.shp`
     - Iris Zones: `net_car/shapefiles_sym/` containing the IRIS zones shapefile
     - Public Transport: `net_pt/GTFS/` containing the GTFS folder.zip (e.g., `net_pt/gtfs/lyon_tcl_gtfs.zip`), composed of .txt files (e.g., `stops.txt`, `stop_times.txt`, `trips.txt`, `routes.txt` ...)
+#### Example of expected tree: 
+data/
+| Lyon/
+|   | raw_data/
+|   |   | net_bike/
+|   |   |   | shapes/
+|   |   |   |   | links_processed.cpg
+|   |   |   |   | links_processed.dbf
+|   |   |   |   | links_processed.shp
+|   |   |   |   | links_processed.shx
+|   |   |   |   | nodes_processed.cpg
+|   |   |   |   | nodes_processed.dbf
+|   |   |   |   | nodes_processed.shp
+|   |   |   |   | nodes_processed.shx
+|   |   | net_car/
+|   |   |   | shapefiles_sym/
+|   |   |   |   | Iris_Lyon.dbf
+|   |   |   |   | Iris_Lyon.shp
+|   |   |   |   | Iris_Lyon.shx
+|   |   | net_pt/
+|   |   |   | GTFS/
+|   |   |   |   | lyon_tcl_gtfs.zip
 
 ### Notebook: 
 
@@ -25,7 +57,7 @@ This specific configuration (available in `config/Lyon_multimodal.py`) will gene
 - If Links.shp and Nodes.shp from GTFS are not already saved, pre-processing can be particularly time-consuming (~1h for Lyon on a standard laptop). After this step, they are saved in `net_pt/lines/lines.shp` and `net_pt/stops/stops.shp` to avoid having to redo the extraction each time.
 
 - Some road traffic link can have non-null capacity and speed values in one direction, but the number of lanes is null or None. 
-  - What is supposed to be forbiden is to have non null values for lanes number and null values for either speed or capacity.
+  - `What is supposed to be forbiden is` to have non null values for lanes number and null values for either speed or capacity.
 
 ## To do later on:
 - Correct errors during map-matching of bus lines on the OSM network

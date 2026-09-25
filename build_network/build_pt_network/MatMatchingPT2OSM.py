@@ -44,6 +44,7 @@ class MapMatchingPT2OSM():
         assert len(set(bus_extremities_dict.keys())) == len(bus_extremities_dict.keys()), "Duplicate route IDs found in bus_extremities_dict"
 
         final_pt_links = gpd.GeoDataFrame()
+        diagnostics = {}  # Outcome of the map matching for each bus sub-route (see _build_diagnostics)
         for sub_route_id, route_extremities in tqdm(bus_extremities_dict.items(), desc="Processing Bus Routes"):
 
             # Could be smart to filter candidate in advance ... Especially using "_find_possible_extremities" to filter out graph extremities that are not true bus route extremities
@@ -63,17 +64,41 @@ class MapMatchingPT2OSM():
 
             # Find path with dijkstra optimization:
             best_path = self._find_best_path_for_route_optimized(route_candidates, start_links, end_links, bus_geom)
+            diagnostic = {'n_candidates': len(route_candidates), 'n_links_path': len(best_path)}
             if len(best_path) > 2:
                 final_route = route_candidates[route_candidates.link_id.isin(best_path)]
                 merged_geom = linemerge(unary_union(final_route.geometry))
 
                 row = {'sub_route_id': sub_route_id, 'line_name': line_name, 'route_id': route_id, 'geometry': merged_geom, 'path_link_id': best_path}
                 final_pt_links = pd.concat([final_pt_links, gpd.GeoDataFrame([row], geometry='geometry', crs=route_candidates.crs)], ignore_index=True)
+                diagnostic.update({'status': 'matched', 'len_matched_m': merged_geom.length, 'hausdorff_m': bus_geom.hausdorff_distance(merged_geom)})
+            elif not start_links or not end_links:
+                diagnostic['status'] = 'no_start_or_end_link'
+            elif len(best_path) == 0:
+                diagnostic['status'] = 'no_path'
+            else:
+                diagnostic['status'] = 'path_too_short_dropped'
+            diagnostics[sub_route_id] = diagnostic
             final_link_indices.extend(best_path)
 
 
         final_matches = road_links[road_links['link_id'].isin(list(set(final_link_indices)))]
+        self.bus_routes_diagnostics = self._build_diagnostics(bus_routes, diagnostics)
         return final_matches, final_pt_links
+
+    def _build_diagnostics(self, bus_routes, diagnostics):
+        """ GeoDataFrame of the initial GTFS bus sub-routes (EPSG:2154) with the outcome of their map matching:
+        status in ['matched', 'path_too_short_dropped', 'no_path', 'no_start_or_end_link', 'no_candidate_link'],
+        n_candidates, n_links_path, len_init_m, len_matched_m and hausdorff_m (distance between initial and matched geometries)."""
+        diagnostics_df = pd.DataFrame.from_dict(diagnostics, orient='index',
+                                                columns=['status', 'n_candidates', 'n_links_path', 'len_matched_m', 'hausdorff_m'])
+        bus_routes_diagnostics = bus_routes[['route_id', 'line_name', 'geometry']].join(diagnostics_df)
+        # Sub-routes absent from bus_extremities_dict have no candidate link at all:
+        bus_routes_diagnostics['status'] = bus_routes_diagnostics['status'].fillna('no_candidate_link')
+        bus_routes_diagnostics['len_init_m'] = bus_routes_diagnostics.geometry.length
+        bus_routes_diagnostics = bus_routes_diagnostics.rename_axis('sub_route_id').reset_index()
+        columns = ['sub_route_id', 'route_id', 'line_name', 'status', 'n_candidates', 'n_links_path', 'len_init_m', 'len_matched_m', 'hausdorff_m', 'geometry']
+        return bus_routes_diagnostics[columns]
 
     def _get_candidates_links(self, road_links, bus_routes_buffered):
         """

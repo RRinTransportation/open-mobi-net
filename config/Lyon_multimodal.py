@@ -35,6 +35,9 @@ parser.add_argument('--transit_date', type=str, default='2024-08-14', help='Date
 # Zones parameters : 
 parser.add_argument('--target_n_zones', type=int, default=5, help='Number of zones to aggregate the initial zones to')
 
+# Save the built network :
+parser.add_argument('--save_path', type=str, default=None, help='If not None, folder where build() saves the network (reload it with MultiModalNetwork.load(path))')
+
 
 args = parser.parse_args(args=[])
 # args = parser.parse_args()

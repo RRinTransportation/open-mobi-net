@@ -2,6 +2,7 @@ import folium
 from folium.features import GeoJsonTooltip
 import pandas as pd
 import geopandas as gpd 
+from geopandas import GeoDataFrame
 import math 
 import numpy as np 
 
@@ -54,7 +55,15 @@ def draw_lane(main_map,links_gdf,layer_name,link_color,tooltip_fields):
 
     return main_map
 
-def add_network_layer(main_map, links_gdf, all_nodes_gdf, layer_name, link_color, node_color):
+def add_network_layer(main_map, 
+                      links_gdf: GeoDataFrame, 
+                      all_nodes_gdf: GeoDataFrame = None, 
+                      layer_name: str = None, 
+                      link_color:str = None, 
+                      node_color: str = None, 
+                      tooltip_fields: list = None,
+                      draw_arrows: bool = True,
+                      ):
     """
     Adds a layer of links, nodes, and directional arrows to a Folium map.
     """
@@ -63,80 +72,83 @@ def add_network_layer(main_map, links_gdf, all_nodes_gdf, layer_name, link_color
         return
 
     # --- Tackle Links ---
-    tooltip_fields = ['link_id', 'a_node', 'b_node', 'lanes_ab', 'lanes_ba','speed_ab', 'speed_ba', 'capacity_ab', 'capacity_ba','modes','link_type']
+    if tooltip_fields is None: 
+        tooltip_fields = ['link_id', 'a_node', 'b_node', 'lanes_ab', 'lanes_ba','speed_ab', 'speed_ba', 'capacity_ab', 'capacity_ba','modes','link_type']
     main_map = draw_lane(main_map,links_gdf,layer_name,link_color,tooltip_fields) 
   
 
     # --- Tackle Nodes ---
-    layer_group_nodes = folium.FeatureGroup(name=f"{layer_name} Nodes", show=False)
-    node_ids = pd.unique(links_gdf[['a_node', 'b_node']].values.ravel('K'))
-    associated_nodes = all_nodes_gdf[all_nodes_gdf['node_id'].isin(node_ids)]
-    for _, node in associated_nodes.iterrows():
-        folium.CircleMarker(
-            location=[node.geometry.y, node.geometry.x],
-            radius=4,
-            color=node_color,
-            fill=True,
-            fill_color=node_color,
-            fill_opacity=1.0,
-            tooltip=f"Node ID: {node['node_id']}"
-        ).add_to(layer_group_nodes)
-    layer_group_nodes.add_to(main_map)
+    if all_nodes_gdf is not None: 
+        layer_group_nodes = folium.FeatureGroup(name=f"{layer_name} Nodes", show=False)
+        node_ids = pd.unique(links_gdf[['a_node', 'b_node']].values.ravel('K'))
+        associated_nodes = all_nodes_gdf[all_nodes_gdf['node_id'].isin(node_ids)]
+        for _, node in associated_nodes.iterrows():
+            folium.CircleMarker(
+                location=[node.geometry.y, node.geometry.x],
+                radius=4,
+                color=node_color,
+                fill=True,
+                fill_color=node_color,
+                fill_opacity=1.0,
+                tooltip=f"Node ID: {node['node_id']}"
+            ).add_to(layer_group_nodes)
+        layer_group_nodes.add_to(main_map)
     
 
     # MODIFIED ARROWHEAD SECTION ================================================
     # --- Tackle Arrows ---
-    layer_group_arrows = folium.FeatureGroup(name=f"{layer_name} Arrows", show=False)
+    if draw_arrows : 
+        layer_group_arrows = folium.FeatureGroup(name=f"{layer_name} Arrows", show=False)
 
-    # Define arrow geometry (in coordinate degrees - works well for local maps)
-    arrow_length_deg = 0.0002  # Length from tip to base
-    arrow_width_deg = 0.0001  # Full width of the arrow base
+        # Define arrow geometry (in coordinate degrees - works well for local maps)
+        arrow_length_deg = 0.0002  # Length from tip to base
+        arrow_width_deg = 0.0001  # Full width of the arrow base
 
-    for _, link in links_gdf.iterrows():
-        line = link['geometry']
-        if not isinstance(line, object) or line.is_empty:
-            continue
+        for _, link in links_gdf.iterrows():
+            line = link['geometry']
+            if not isinstance(line, object) or line.is_empty:
+                continue
 
-        # 1. Position the tip of the arrow
-        p = 0.25
-        tip_point = line.interpolate(p, normalized=True)
+            # 1. Position the tip of the arrow
+            p = 0.25
+            tip_point = line.interpolate(p, normalized=True)
 
-        # 2. Get the line's angle to orient the arrow
-        p1 = line.interpolate(p-1e-3, normalized=True)
-        p2 = line.interpolate(p+1e-3, normalized=True)
-        angle_rad = math.atan2(p2.y - p1.y, p2.x - p1.x)
+            # 2. Get the line's angle to orient the arrow
+            p1 = line.interpolate(p-1e-3, normalized=True)
+            p2 = line.interpolate(p+1e-3, normalized=True)
+            angle_rad = math.atan2(p2.y - p1.y, p2.x - p1.x)
 
-        # 3. Calculate the 3 vertices of the isosceles triangle
-        # Vertex 1: The tip
-        v1 = (tip_point.y, tip_point.x)
+            # 3. Calculate the 3 vertices of the isosceles triangle
+            # Vertex 1: The tip
+            v1 = (tip_point.y, tip_point.x)
 
-        # Find the center of the base by moving backward from the tip
-        base_center_x = tip_point.x - arrow_length_deg * math.cos(angle_rad)
-        base_center_y = tip_point.y - arrow_length_deg * math.sin(angle_rad)
+            # Find the center of the base by moving backward from the tip
+            base_center_x = tip_point.x - arrow_length_deg * math.cos(angle_rad)
+            base_center_y = tip_point.y - arrow_length_deg * math.sin(angle_rad)
 
-        # Find the two base corners by moving perpendicularly from the base center
-        perp_angle_rad = angle_rad + math.pi / 2
-        half_width = arrow_width_deg / 2
-        
-        # Vertex 2: Right base corner
-        v2_x = base_center_x + half_width * math.cos(perp_angle_rad)
-        v2_y = base_center_y + half_width * math.sin(perp_angle_rad)
-        v2 = (v2_y, v2_x)
-        
-        # Vertex 3: Left base corner
-        v3_x = base_center_x - half_width * math.cos(perp_angle_rad)
-        v3_y = base_center_y - half_width * math.sin(perp_angle_rad)
-        v3 = (v3_y, v3_x)
+            # Find the two base corners by moving perpendicularly from the base center
+            perp_angle_rad = angle_rad + math.pi / 2
+            half_width = arrow_width_deg / 2
+            
+            # Vertex 2: Right base corner
+            v2_x = base_center_x + half_width * math.cos(perp_angle_rad)
+            v2_y = base_center_y + half_width * math.sin(perp_angle_rad)
+            v2 = (v2_y, v2_x)
+            
+            # Vertex 3: Left base corner
+            v3_x = base_center_x - half_width * math.cos(perp_angle_rad)
+            v3_y = base_center_y - half_width * math.sin(perp_angle_rad)
+            v3 = (v3_y, v3_x)
 
-        # 4. Draw the filled triangle using PolyLine
-        folium.PolyLine(
-            locations=[v1, v2, v3, v1], # Close the loop by repeating the first point
-            color=link_color,
-            weight=0, # No border
-            fill=True,
-            fill_color=link_color,
-            fill_opacity=0.8
-        ).add_to(layer_group_arrows)
+            # 4. Draw the filled triangle using PolyLine
+            folium.PolyLine(
+                locations=[v1, v2, v3, v1], # Close the loop by repeating the first point
+                color=link_color,
+                weight=0, # No border
+                fill=True,
+                fill_color=link_color,
+                fill_opacity=0.8
+            ).add_to(layer_group_arrows)
         
     layer_group_arrows.add_to(main_map)
     # END OF MODIFIED SECTION ===================================================

@@ -23,7 +23,8 @@ LANE_CAPACITY_ASSUMPTIONS = {
                                     'unclassified': 700,
                                     }
 
-CAPACITY_ASSUMPTIONS_BASED_ON_SPEED = { 15.0: 300,  # 15km/h
+CAPACITY_ASSUMPTIONS_BASED_ON_SPEED = { 10.0: 200, # 10km/h
+                                        15.0: 300,  # 15km/h
                                         20.0: 500,  # 20km/h
                                         30.0: 700,  # 30km/h
                                         50.0: 1000,  # 50km/h
@@ -67,10 +68,12 @@ def load_shp_from_2154(shp_path):
     return gdf_i
 
 def add_lanes_when_missing(network_gdf):
-    """ Sometimes the row contains lanes_ab = None & lanes_ba = 0 
-    or lanes_ab = 0 & lanes_ba = None.
+    """ Sometimes the row contains lanes_ab = None or 0 & lanes_ba = None or 0.
     In that specific case, and where speed exists, we assume the lane with count = 0 is actually equal to 1.
     And then we specify in a new columns 'added_lane' that we add a lane to that direction.
+
+    Sometimes both are None. In that specific case, and where speed exists, we assume the 'lanes_ab' and 'lanes_ba' feature 
+    are both equal to 1.
     Otherwise, we just keep the original values, and set added_lane to False.
     """
     network_gdf[['lanes_ab','lanes_ba','added_lane']] = network_gdf.apply(lambda row : add_lanes(row),axis=1)
@@ -110,16 +113,20 @@ def add_capacity_on_car_links(network_gdf):
     return network_gdf
 
 def add_lanes(row):
-    """ Sometimes the row contains lanes_ab = None & lanes_ba = 0 
-    or lanes_ab = 0 & lanes_ba = None.
+    """ Sometimes the row contains lanes_ab = None or 0 & lanes_ba = None or 0.
     In that specific case, and where speed exists, we assume the lane with count = 0 is actually equal to 1.
     And then we specify in a new columns 'added_lane' that we add a lane to that direction.
+
+    Sometimes both are None. In that specific case, and where speed exists, we assume the 'lanes_ab' and 'lanes_ba' feature 
+    are both equal to 1.
     Otherwise, we just keep the original values, and set added_lane to False.
     """
     if math.isnan(row['lanes_ab']) and row['lanes_ba'] == 0:
         return pd.Series([0,  1, True])
     elif row['lanes_ab'] == 0 and math.isnan(row['lanes_ba']):
         return pd.Series([1, 0, True])
+    elif math.isnan(row['lanes_ab']) and math.isnan(row['lanes_ba']) and (row['speed_ba'] > 0) and (row['speed_ab'] > 0):
+        return pd.Series([1, 1, True])
     else:
         return pd.Series([row['lanes_ab'], row['lanes_ba'], False])
 
